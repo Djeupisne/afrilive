@@ -1,1 +1,26 @@
+# Dependencies
 node_modules/
+
+# Environnement (jamais commité)
+.env
+.env.*
+!.env.example
+
+# Build / dist
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Tests / couverture
+coverage/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
