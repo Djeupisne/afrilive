@@ -20,10 +20,21 @@ Fait :
   schéma Prisma : Role, KycStatus, OrderStatus, PaymentStatus) ; les fichiers ne
   contiennent que les helpers (statuts terminaux, tables de transitions).
 
-PROCHAINE ACTION : backend/src/common/decorators (current-user, roles, public),
-puis guards → filters → interceptors → dto/utils → config → database → main.ts
-→ app.module.ts → Dockerfile/docker-compose/livekit/README.
-Gate à chaque groupe : `npm run build` + `npm run lint`, commit après chaque groupe qui compile.
+- backend/src/common/decorators/ (current-user, roles, public) ✅
+- backend/src/common/guards/ (jwt-auth global avec @Public, roles) ✅
+- backend/src/common/filters/http-exception.filter.ts (RFC 7807, FR/EN selon Accept-Language) ✅
+- backend/src/common/interceptors/ (idempotency Redis SET NX + rejeu, logging x-request-id) ✅
+- backend/src/common/dto/pagination.dto.ts + utils (pagination curseur keyset, money.ts table des exposants ISO 4217) ✅
+- backend/src/config/ (configuration.ts registerAs + env.validation.ts) ✅
+- backend/src/database/ (PrismaModule global, PrismaService) ✅
+- backend/src/main.ts (helmet, compression, CORS, ValidationPipe, Swagger /docs, filtre global, shutdown propre) ✅
+- backend/src/app.module.ts (ConfigModule, EventEmitter, Schedule, Throttler, Prisma ; guards JWT/Roles/Throttler et intercepteurs globaux) ✅
+- backend/Dockerfile (multi-stage node:20-alpine + tini), backend/.dockerignore ✅
+- Racine : docker-compose.yml (db/redis/meili/minio/livekit/api), livekit.yaml, .gitignore, README.md ✅
+
+Étape 1 TERMINÉE ✅ — Gate validée : `npm run build` OK, `npm run lint` OK (0 erreur).
+
+PROCHAINE ACTION : Étape 2 modules métier — implémenter src/modules/** (commencer par auth : JwtStrategy + endpoints OTP/refresh dans le squelette existant) puis integrations/**.
 
 ### Étape 2 — Schéma Prisma
 - backend/prisma/schema.prisma : TERMINÉ et validé (78 modèles).
