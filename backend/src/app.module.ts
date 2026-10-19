@@ -4,9 +4,12 @@ import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import configuration from './config/configuration';
 import { validateEnv } from './config/env.validation';
 import { PrismaModule } from './database/prisma.module';
+import { RedisModule } from './integrations/redis/redis.module';
+import { RedisService } from './integrations/redis/redis.service';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
@@ -15,7 +18,7 @@ import { IdempotencyInterceptor } from './common/interceptors/idempotency.interc
 /**
  * Racine de l'application.
  * [HYPOTHÈSE] Les modules métier (auth, users, wallet…) seront importés ici à
- * mesure de leur implémentation (étape 2+). Ils sont actuellement des fichiers
+ * mesure de leur implémentation (étape 4). Ils sont actuellement des fichiers
  * vides et ne peuvent pas être chargés.
  */
 @Module({
@@ -28,7 +31,18 @@ import { IdempotencyInterceptor } from './common/interceptors/idempotency.interc
     }),
     EventEmitterModule.forRoot({ wildcard: true, delimiter: '.' }),
     ScheduleModule.forRoot(),
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
+    RedisModule,
+    // Rate-limit global stocké sur Redis (partagé entre instances) plutôt qu'en mémoire.
+    ThrottlerModule.forRootAsync({
+      imports: [RedisModule],
+      inject: [RedisService],
+      useFactory: (redis: RedisService) => ({
+        throttlers: [{ ttl: 60_000, limit: 100 }],
+        // Cast : signature increment() du storage @nest-lab (5 args) plus large
+        // que celle attendue par @nestjs/throttler v5 (2 args) — compatible à l'exécution.
+        storage: new ThrottlerStorageRedisService(redis.client) as unknown as import('@nestjs/throttler').ThrottlerStorage,
+      }),
+    }),
     PrismaModule,
   ],
   providers: [
