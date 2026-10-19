@@ -1,26 +1,24 @@
-# Dependencies
 node_modules/
-
-# Environnement (jamais commité)
-.env
-.env.*
-!.env.example
-
-# Build / dist
 dist/
 build/
-
-# Logs
-*.log
-npm-debug.log*
-
-# Tests / couverture
 coverage/
-
-# IDE
-.vscode/
-.idea/
-
-# OS
+*.log
+logs/
+.env
+.env.local
+.env.*.local
+!.env.example
 .DS_Store
-Thumbs.db
+.idea/
+.vscode/
+*.tsbuildinfo
+tmp/
+uploads/
+mobile/node_modules/
+mobile/dist/
+mobile/.expo/
+web/node_modules/
+web/.next/
+web/out/
+# Prisma local artifacts
+backend/prisma/dev.db

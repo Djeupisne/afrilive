@@ -1,14 +1,17 @@
-/** Statuts de commande — miroir de l'enum Prisma `OrderStatus`. */
-export enum OrderStatus {
-  PENDING = 'PENDING',
-  PAID = 'PAID',
-  SHIPPED = 'SHIPPED',
-  DELIVERED = 'DELIVERED',
-  CANCELLED = 'CANCELLED',
-  RETURNED = 'RETURNED',
-  REFUNDED = 'REFUNDED',
-  DISPUTED = 'DISPUTED',
-}
+/**
+ * Statuts de commande — re-export de l'enum généré par Prisma (source de vérité :
+ * backend/prisma/schema.prisma). Ne jamais redéfinir les valeurs ici.
+ */
+import { OrderStatus as PrismaOrderStatus } from '@prisma/client';
+
+export const OrderStatus = PrismaOrderStatus;
+export type OrderStatus = PrismaOrderStatus;
+
+/** Statuts terminaux d'une commande (plus aucune transition possible). */
+export const FINAL_ORDER_STATUSES: readonly OrderStatus[] = [
+  OrderStatus.CANCELLED,
+  OrderStatus.REFUNDED,
+] as const;
 
 /** Transitions autorisées du cycle de vie d'une commande. */
 export const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {

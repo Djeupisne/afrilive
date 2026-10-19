@@ -1,0 +1,70 @@
+version: "3.9"
+
+# Stack de développement AfriLive : API + Postgres + Redis + Meilisearch + LiveKit + MinIO.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: afrilive
+      POSTGRES_PASSWORD: afrilive
+      POSTGRES_DB: afrilive
+    ports: ["5432:5432"]
+    volumes: [db_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U afrilive"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    volumes: [redis_data:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  meili:
+    image: getmeili/meilisearch:v1.10
+    environment:
+      MEILI_MASTER_KEY: masterKey
+      MEILI_ENV: development
+    ports: ["7700:7700"]
+    volumes: [meili_data:/meili_data]
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: afrilive
+      MINIO_ROOT_PASSWORD: afrilive-secret
+    ports: ["9000:9000", "9001:9001"]
+    volumes: [minio_data:/data]
+
+  livekit:
+    image: livekit/livekit-server:latest
+    command: --config /etc/livekit.yaml --dev
+    ports: ["7880:7880", "7881:7881", "50000-50200:50000-50200/udp"]
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml:ro
+
+  api:
+    build: ./backend
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    env_file: backend/.env.example
+    environment:
+      DATABASE_URL: postgresql://afrilive:afrilive@db:5432/afrilive?schema=public
+      REDIS_URL: redis://redis:6379
+      MEILI_HOST: http://meili:7700
+      S3_ENDPOINT: http://minio:9000
+      LIVEKIT_URL: ws://livekit:7880
+    ports: ["3000:3000"]
+    command: sh -c "npx prisma migrate deploy && node dist/src/main.js"
+
+volumes:
+  db_data:
+  redis_data:
+  meili_data:
+  minio_data:
