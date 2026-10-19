@@ -10,26 +10,20 @@ puis vérifier les fichiers vides (`find . -type f -empty -not -path "./node_mod
 
 ### Étape 1 — EN COURS 🔄
 Fait :
-- backend/package.json
-- backend/tsconfig.json
-- backend/tsconfig.build.json
-- backend/nest-cli.json
-- backend/eslint.config.mjs
-- backend/.prettierrc
-- backend/.env.example
+- backend/package.json, tsconfig.json, tsconfig.build.json, nest-cli.json,
+  eslint.config.mjs, .prettierrc, .env.example
+- backend/src/common/errors/ (app.exception.ts, error-codes.ts) — AppException
+  RFC 7807 + codes stables AFRI-<domaine>-<numéro>.
+- backend/src/common/events/domain-events.ts — noms d'événements + payloads typés.
+- backend/src/common/enums/ (role, kyc-status, order-status, payment-status) —
+  **re-export des enums générés par @prisma/client** (vérifiés identiques au
+  schéma Prisma : Role, KycStatus, OrderStatus, PaymentStatus) ; les fichiers ne
+  contiennent que les helpers (statuts terminaux, tables de transitions).
 
-Reste :
-- backend/src/common/** (AppException, error-codes, domain-events, guards JWT/roles,
-  decorators, filtre RFC 7807, intercepteurs, pagination curseur, money.ts, enums)
-- backend/src/config/** (configuration.ts, env.validation.ts)
-- backend/src/database/** (prisma.module.ts, prisma.service.ts)
-- backend/src/main.ts
-- backend/src/app.module.ts
-- backend/Dockerfile
-- backend/.dockerignore
-- À la racine : docker-compose.yml, livekit.yaml, .gitignore, README.md
-
-Gate étape 1 : `npm run build` + `npm run lint` doivent passer.
+PROCHAINE ACTION : backend/src/common/decorators (current-user, roles, public),
+puis guards → filters → interceptors → dto/utils → config → database → main.ts
+→ app.module.ts → Dockerfile/docker-compose/livekit/README.
+Gate à chaque groupe : `npm run build` + `npm run lint`, commit après chaque groupe qui compile.
 
 ### Étape 2 — Schéma Prisma
 - backend/prisma/schema.prisma : TERMINÉ et validé (78 modèles).
