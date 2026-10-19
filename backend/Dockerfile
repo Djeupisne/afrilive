@@ -2,7 +2,7 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 RUN apk add --no-cache libc6-compat openssl
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 COPY prisma ./prisma
 RUN npm ci --no-audit --no-fund
 COPY . .
@@ -13,7 +13,7 @@ FROM node:20-alpine AS runtime
 WORKDIR /app
 RUN apk add --no-cache tini
 ENV NODE_ENV=production
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 COPY prisma ./prisma
 RUN npm ci --omit=dev --no-audit --no-fund && npx prisma generate
 COPY --from=build /app/dist ./dist

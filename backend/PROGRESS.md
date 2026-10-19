@@ -1,59 +1,41 @@
-# PROGRESS — AfriLive Backend (NestJS)
+# PROGRESS — Backend AfriLive
 
-Protocole de reprise : lire ce fichier en premier, puis `git log --oneline`,
-puis vérifier les fichiers vides (`find . -type f -empty -not -path "./node_modules/*"`).
+## Plan (numérotation d'origine du cahier des charges)
 
-## État des étapes
+| Étape | Contenu | Statut |
+|---|---|---|
+| 1 | Fondations (NestJS, config, erreurs RFC 7807, guards/interceptors, utils money/pagination, enums) | **TERMINÉE** |
+| 2 | Prisma (schema, enums, migrations) | **TERMINÉE** — migration `0001_init` générée hors ligne (`prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script`) ; application en base (`prisma migrate deploy`) **reportée** (aucune instance Postgres disponible dans l'environnement de dev) |
+| 3 | Intégrations (redis, storage, queue, sms, push, email) + specs utils | **EN COURS** |
+| 4 | Modules métier (auth en premier, puis users/wallet/payments/orders/lives/…) | À FAIRE |
 
-### Étape 0 — Terminée ✅
-- Structure du dépôt initialisée, dépôt Git actif.
+## Décisions actées
 
-### Étape 1 — EN COURS 🔄
-Fait :
-- backend/package.json, tsconfig.json, tsconfig.build.json, nest-cli.json,
-  eslint.config.mjs, .prettierrc, .env.example
-- backend/src/common/errors/ (app.exception.ts, error-codes.ts) — AppException
-  RFC 7807 + codes stables AFRI-<domaine>-<numéro>.
-- backend/src/common/events/domain-events.ts — noms d'événements + payloads typés.
-- backend/src/common/enums/ (role, kyc-status, order-status, payment-status) —
-  **re-export des enums générés par @prisma/client** (vérifiés identiques au
-  schéma Prisma : Role, KycStatus, OrderStatus, PaymentStatus) ; les fichiers ne
-  contiennent que les helpers (statuts terminaux, tables de transitions).
+- **Préfixe global API = `/api/v1`** partout où le cahier des charges écrit `/v1`.
+  Appliqué dans : `src/main.ts` (`setGlobalPrefix('api/v1')` + versioning URI défaut `1`), README (`http://localhost:3000/api/v1`), Swagger monté sur `/docs` (le document reflète le préfixe global). Healthcheck docker-compose : endpoints db/redis OK ; le chemin health de l'API suivra le préfixe `/api/v1` quand le module health existera.
+- **npm avec `legacy-peer-deps=true`** → consigné dans `backend/.npmrc` ; le Dockerfile copie `.npmrc` avant `npm ci` (build et runtime).
+- **Throttler sur Redis** : stockage distribué via `@nest-lab/throttler-storage-redis` (`ThrottlerStorageRedisService`), branché en `ThrottlerModule.forRootAsync`.
+- **Redis obligatoire** : l'`IdempotencyInterceptor` s'appuie sur `RedisService` (plus aucun comportement no-op sans Redis).
+- **rawBody** : `NestFactory.create(AppModule, { rawBody: true })` pour la vérification de signature des webhooks (`req.rawBody`) ; parsing JSON actif par défaut pour les autres routes.
 
-- backend/src/common/decorators/ (current-user, roles, public) ✅
-- backend/src/common/guards/ (jwt-auth global avec @Public, roles) ✅
-- backend/src/common/filters/http-exception.filter.ts (RFC 7807, FR/EN selon Accept-Language) ✅
-- backend/src/common/interceptors/ (idempotency Redis SET NX + rejeu, logging x-request-id) ✅
-- backend/src/common/dto/pagination.dto.ts + utils (pagination curseur keyset, money.ts table des exposants ISO 4217) ✅
-- backend/src/config/ (configuration.ts registerAs + env.validation.ts) ✅
-- backend/src/database/ (PrismaModule global, PrismaService) ✅
-- backend/src/main.ts (helmet, compression, CORS, ValidationPipe, Swagger /docs, filtre global, shutdown propre) ✅
-- backend/src/app.module.ts (ConfigModule, EventEmitter, Schedule, Throttler, Prisma ; guards JWT/Roles/Throttler et intercepteurs globaux) ✅
-- backend/Dockerfile (multi-stage node:20-alpine + tini), backend/.dockerignore ✅
-- Racine : docker-compose.yml (db/redis/meili/minio/livekit/api), livekit.yaml, .gitignore, README.md ✅
+## État détaillé — Étape 3 (Intégrations)
 
-Étape 1 TERMINÉE ✅ — Gate validée : `npm run build` OK, `npm run lint` OK (0 erreur).
+- [ ] B1 redis : `RedisModule` @Global + `RedisService` (get/set/del/incr/expire, setNx+TTL, withLock, GEO, sets+TTL, pub/sub, shutdown propre) ; IdempotencyInterceptor rebasé ; Throttler Redis.
+- [ ] B2 storage : S3 compatible R2/MinIO (presignPut/Get, multipart, delete, copy, CDN, token CDN signé).
+- [ ] B3 queue : BullMQ, 6 queues (video-transcode, moderation-scan, notification-fanout, webhook-process, search-index, payout), backoff exponentiel, removeOnComplete/Fail bornés.
+- [ ] B4 sms : Termii (NG/GH), Africa's Talking (autres pays), repli WhatsApp, SMS_MODE=console, timeouts/retries → AppException.
+- [ ] B5 push : FCM (firebase-admin, APNs via FCM), HMS (HTTP), routage DeviceToken.platform, désactivation propre si clés absentes, purge tokens invalides.
+- [ ] B6 email : nodemailer SMTP ou mode console.
+- [ ] Enregistrement des modules dans `app.module.ts`.
+- [ ] Specs : money.spec.ts, pagination.spec.ts, enums/transitions.spec.ts, sms.service.spec.ts.
 
-PROCHAINE ACTION : Étape 2 modules métier — implémenter src/modules/** (commencer par auth : JwtStrategy + endpoints OTP/refresh dans le squelette existant) puis integrations/**.
+## Conventions
 
-### Étape 2 — Schéma Prisma
-- backend/prisma/schema.prisma : TERMINÉ et validé (78 modèles).
-- Migration reportée [HYPOTHÈSE : pas de Docker/Postgres dans l'environnement].
-  → Migration générée sans base via `prisma migrate diff --from-empty
-  --to-schema-datamodel --script` dans prisma/migrations/0001_init/migration.sql,
-  appliquée plus tard avec `npx prisma migrate deploy`.
+- Un fichier à la fois, build vert avant chaque commit ; gate complète : `npx prisma validate && npm run build && npm run lint && npm test`.
+- `npm install` utilise `legacy-peer-deps` (voir `.npmrc`).
+- Unités monétaires : entiers en unités mineures, jamais de flottants (voir `src/common/utils/money.ts`).
+- Erreurs : `AppException` + codes stables `ERROR_CODES` (RFC 7807).
 
-### Étape 3 — Intégrations (à venir)
-- backend/src/integrations/** (sms, email, push, storage, redis, queue) — fichiers
-  squelettes présents, à implémenter après l'étape 1.
+## PROCHAINE ACTION
 
-## Ajouts de fichiers / suppressions notables
-- `tools/` SUPPRIMÉ : le générateur `tools/gen_schema.py` n'est plus dans la
-  structure cible. **backend/prisma/schema.prisma est désormais la source de
-  vérité ; ne plus régénérer le schéma via un outil.**
-- `backend/.env` créé depuis `.env.example` (DATABASE_URL local factice) pour
-  que `npx prisma validate` passe ; ajouté au `.gitignore`.
-
-## Conventions shell (environnement instable)
-- Écrire les fichiers UN PAR UN (pas de commandes géantes).
-- Committed après chaque groupe de fichiers qui compile.
+B1 — redis : implémenter `RedisModule`/`RedisService`, rebaser `IdempotencyInterceptor`, brancher le throttler Redis. Puis modules métier : **module auth** en premier (dto → otp → token → jwt.strategy → social verifiers → two-factor → auth.service → auth.controller → kyc → module → app.module → specs → gate → commit).
