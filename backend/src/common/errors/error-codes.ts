@@ -1,0 +1,89 @@
+/**
+ * Codes d'erreur applicatifs stables (RFC 7807 `type` suffix).
+ * Convention : AFRI-<domaine>-<numéro>. Ne jamais réutiliser un code retiré.
+ */
+export const ERROR_CODES = {
+  // Commun / HTTP générique
+  INTERNAL_ERROR: 'AFRI-COMMON-000',
+  VALIDATION_FAILED: 'AFRI-COMMON-001',
+  NOT_FOUND: 'AFRI-COMMON-002',
+  CONFLICT: 'AFRI-COMMON-003',
+  RATE_LIMITED: 'AFRI-COMMON-004',
+  IDEMPOTENCY_CONFLICT: 'AFRI-COMMON-005',
+
+  // Auth
+  INVALID_CREDENTIALS: 'AFRI-AUTH-001',
+  OTP_INVALID: 'AFRI-AUTH-002',
+  OTP_EXPIRED: 'AFRI-AUTH-003',
+  OTP_TOO_MANY_ATTEMPTS: 'AFRI-AUTH-004',
+  TOKEN_EXPIRED: 'AFRI-AUTH-005',
+  TOKEN_REVOKED: 'AFRI-AUTH-006',
+  ACCOUNT_LOCKED: 'AFRI-AUTH-007',
+  ACCOUNT_SUSPENDED: 'AFRI-AUTH-008',
+  PHONE_ALREADY_TAKEN: 'AFRI-AUTH-009',
+  EMAIL_ALREADY_TAKEN: 'AFRI-AUTH-010',
+  TWO_FACTOR_REQUIRED: 'AFRI-AUTH-011',
+  TWO_FACTOR_INVALID: 'AFRI-AUTH-012',
+  DEVICE_LIMIT_REACHED: 'AFRI-AUTH-013',
+
+  // KYC
+  KYC_ALREADY_PENDING: 'AFRI-KYC-001',
+  KYC_DOC_MISSING: 'AFRI-KYC-002',
+  KYC_REJECTED: 'AFRI-KYC-003',
+
+  // Wallet / paiements
+  INSUFFICIENT_BALANCE: 'AFRI-WALLET-001',
+  WITHDRAWAL_LIMIT_EXCEEDED: 'AFRI-WALLET-002',
+  WALLET_FROZEN: 'AFRI-WALLET-003',
+  CURRENCY_MISMATCH: 'AFRI-WALLET-004',
+  PAYMENT_PROVIDER_UNAVAILABLE: 'AFRI-PAY-001',
+  PAYMENT_FAILED: 'AFRI-PAY-002',
+  ESCROW_NOT_RELEASED: 'AFRI-PAY-003',
+  DUPLICATE_PAYMENT: 'AFRI-PAY-004',
+  PAYOUT_MIN_AMOUNT: 'AFRI-PAY-005',
+
+  // Commandes / panier
+  CART_EMPTY: 'AFRI-ORDER-001',
+  OUT_OF_STOCK: 'AFRI-ORDER-002',
+  ORDER_EXPIRED: 'AFRI-ORDER-003',
+  ORDER_NOT_PAYABLE: 'AFRI-ORDER-004',
+  ORDER_INVALID_TRANSITION: 'AFRI-ORDER-005',
+
+  // Boutiques / produits
+  SHOP_NOT_VERIFIED: 'AFRI-SHOP-001',
+  PRODUCT_UNAVAILABLE: 'AFRI-PROD-001',
+
+  // Lives
+  LIVE_ALREADY_STARTED: 'AFRI-LIVE-001',
+  LIVE_ENDED: 'AFRI-LIVE-002',
+  LIVE_KICKED: 'AFRI-LIVE-003',
+
+  // Modération
+  CONTENT_FLAGGED: 'AFRI-MOD-001',
+  BANNED_COUNTRY: 'AFRI-MOD-002',
+} as const;
+
+export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES];
+
+/** Description humaine par défaut de chaque code (message RFC 7807). */
+export const ERROR_DESCRIPTIONS: Record<string, string> = {
+  [ERROR_CODES.INTERNAL_ERROR]: 'Erreur interne du serveur.',
+  [ERROR_CODES.VALIDATION_FAILED]: 'Les données fournies sont invalides.',
+  [ERROR_CODES.NOT_FOUND]: 'Ressource introuvable.',
+  [ERROR_CODES.CONFLICT]: "Conflit avec l'état actuel de la ressource.",
+  [ERROR_CODES.RATE_LIMITED]: 'Trop de requêtes, réessayez plus tard.',
+  [ERROR_CODES.IDEMPOTENCY_CONFLICT]: "Requête dupliquée (clé d'idempotence déjà utilisée).",
+  [ERROR_CODES.INVALID_CREDENTIALS]: 'Identifiants incorrects.',
+  [ERROR_CODES.OTP_INVALID]: 'Code OTP invalide.',
+  [ERROR_CODES.OTP_EXPIRED]: 'Code OTP expiré.',
+  [ERROR_CODES.OTP_TOO_MANY_ATTEMPTS]: 'Trop de tentatives OTP.',
+  [ERROR_CODES.TOKEN_EXPIRED]: 'Jeton expiré.',
+  [ERROR_CODES.TOKEN_REVOKED]: 'Jeton révoqué.',
+  [ERROR_CODES.ACCOUNT_LOCKED]: 'Compte verrouillé.',
+  [ERROR_CODES.ACCOUNT_SUSPENDED]: 'Compte suspendu ou banni.',
+  [ERROR_CODES.PHONE_ALREADY_TAKEN]: 'Numéro de téléphone déjà utilisé.',
+  [ERROR_CODES.EMAIL_ALREADY_TAKEN]: 'Adresse e-mail déjà utilisée.',
+  [ERROR_CODES.INSUFFICIENT_BALANCE]: 'Solde insuffisant.',
+  [ERROR_CODES.CART_EMPTY]: 'Panier vide.',
+  [ERROR_CODES.OUT_OF_STOCK]: 'Stock insuffisant.',
+};
