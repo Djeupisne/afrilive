@@ -26,6 +26,11 @@ import { ProductsModule } from './modules/products/products.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { WalletModule } from './modules/wallet/wallet.module';
+import { LivesModule } from './modules/lives/lives.module';
+import { VideosModule } from './modules/videos/videos.module';
+import { FeedModule } from './modules/feed/feed.module';
+import { FollowsModule } from './modules/follows/follows.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 /**
  * Racine de l'application.
@@ -67,6 +72,11 @@ import { WalletModule } from './modules/wallet/wallet.module';
     OrdersModule,
     PaymentsModule,
     WalletModule,
+    LivesModule,
+    VideosModule,
+    FeedModule,
+    FollowsModule,
+    NotificationsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

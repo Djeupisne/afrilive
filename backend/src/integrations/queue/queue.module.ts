@@ -48,5 +48,10 @@ const DEFAULT_QUEUE_OPTIONS = {
       ...Object.values(QUEUES).map((name) => ({ name })),
     ),
   ],
+  // registerQueue() crée les providers BullQueue_<name> (injectables via
+  // @InjectQueue dans les modules métier, ex. VideosService) : ils doivent
+  // être exportés pour rester visibles malgré @Global (seuls les providers
+  // listés dans exports traversent une module global).
+  exports: [BullModule],
 })
 export class QueueModule {}

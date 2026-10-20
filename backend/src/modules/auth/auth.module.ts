@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { EmailModule } from '../../integrations/email/email.module';
+import { SmsModule } from '../../integrations/sms/sms.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { KycController } from './kyc.controller';
@@ -14,7 +16,7 @@ import { TokenService } from './token.service';
 import { TwoFactorService } from './two-factor.service';
 
 @Module({
-  imports: [PassportModule, JwtModule.register({})],
+  imports: [PassportModule, JwtModule.register({}), SmsModule, EmailModule],
   controllers: [AuthController, KycController],
   providers: [
     AuthService,
