@@ -18,13 +18,13 @@ export class LivekitService {
   constructor(private readonly config: ConfigService) {}
 
   /** JWT pour un participant donne (hote = publisher, spectateur = subscriber). */
-  issueToken(identity: string, roomName: string, canPublish: boolean): LiveToken {
+  async issueToken(identity: string, roomName: string, canPublish: boolean): Promise<LiveToken> {
     const apiKey = this.config.get<string>('app.livekit.apiKey') ?? '';
     const apiSecret = this.config.get<string>('app.livekit.apiSecret') ?? '';
     const url = this.config.get<string>('app.livekit.url') ?? '';
     const at = new AccessToken(apiKey, apiSecret, { identity, ttl: '6h' });
     at.addGrant({ room: roomName, roomJoin: true, canPublish, canSubscribe: true });
-    return { token: at.toJwt(), url, roomName };
+    return { token: await at.toJwt(), url, roomName };
   }
 
   /** Ferme la room cote LiveKit (appelee a la fin du live, best effort). */

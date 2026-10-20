@@ -170,7 +170,7 @@ export class LivesService {
     if (live.status === LiveStatus.ENDED) throw AppException.conflict(ERROR_CODES.LIVE_ENDED);
     const isHost = live.hostId === actor.id || isStaff(actor.role as never);
     if (!isHost && live.status !== LiveStatus.LIVE) throw AppException.conflict(ERROR_CODES.LIVE_ENDED, 'Le direct n\u2019a pas encore commence.');
-    return this.livekit.issueToken(actor.id, live.roomName, isHost);
+    return await this.livekit.issueToken(actor.id, live.roomName, isHost);
   }
 
   // ---------------------------------------------------------------- Vitrine
@@ -180,7 +180,7 @@ export class LivesService {
     await this.mustBeLive(actor, id);
     const product = await this.prisma.product.findFirst({
       where: { id: dto.productId },
-      select: { id: true, sellerId: true, shopId: true },
+      select: { id: true, shopId: true },
     });
     if (!product) throw AppException.notFound();
     return this.prisma.liveProduct.create({
