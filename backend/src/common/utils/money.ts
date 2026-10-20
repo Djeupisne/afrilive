@@ -60,11 +60,29 @@ export function exponentOf(currency: string): number {
   return exp;
 }
 
-/** Convertit un montant unitaire ("1500.75") en entier d'unités mineures. */
+/**
+ * Convertit un montant unitaire ("1500.75") en entier d'unités mineures.
+ * Le calcul passe par la chaîne (decScale) pour éviter tout artefact de
+ * flottant binaire : le résultat est toujours un entier exact.
+ */
 export function toMinor(amount: string | number, currency: string): number {
-  const factor = 10 ** exponentOf(currency);
-  // Arrondi bancaire simple via multiplication exacte en chaîne décimale.
-  return Math.round(Number(amount) * factor * 1e6) / 1e6;
+  return decScale(String(amount), 10 ** exponentOf(currency));
+}
+
+/**
+ * Multiplie une chaîne décimale exacte par une puissance de 10 et retourne un
+ * entier arrondi au demi le plus proche (half-up sur la valeur absolue).
+ */
+function decScale(value: string, factor: number): number {
+  const m = /^(-?)(\d+)(?:\.(\d+))?$/.exec(value.trim());
+  if (!m) throw new Error(`Montant invalide : ${value}`);
+  const [, sign, intPart, fracPartRaw = ''] = m;
+  const fracDigits = String(factor).length - 1; // factor = 10^n → n zéros
+  const frac = fracPartRaw.padEnd(fracDigits + 1, '0'); // +1 chiffre pour l'arrondi
+  const scaled = BigInt(intPart + frac.slice(0, fracDigits));
+  const roundUp = Number(frac[fracDigits]) >= 5 ? 1n : 0n;
+  const total = scaled + roundUp;
+  return Number(sign === '-' ? -total : total);
 }
 
 /** Convertit des unités mineures en chaîne décimale exacte (pas de float exporté). */
