@@ -7,7 +7,7 @@
 | 1 | Fondations (NestJS, config, erreurs RFC 7807, guards/interceptors, utils money/pagination, enums) | **TERMINÉE** |
 | 2 | Prisma (schema, enums, migrations) | **TERMINÉE** — migration `0001_init` générée hors ligne (`prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script`) ; application en base (`prisma migrate deploy`) **reportée** (aucune instance Postgres disponible dans l'environnement de dev) |
 | 3 | Intégrations (redis, storage, queue, sms, push, email) + specs utils | **TERMINÉE** (gate : prisma validate + build + lint + test = 55/55 verts) |
-| 4 | Modules métier (auth en premier, puis users/wallet/payments/orders/lives/…) | **EN COURS** — auth TERMINÉE ✅, users TERMINÉ ✅, shops/products TERMINÉS ✅ ; reste : orders/payments → wallet → lives/videos → chats/feed/follows/search/notifications/moderation/deliveries |
+| 4 | Modules métier (auth en premier, puis users/wallet/payments/orders/lives/…) | **EN COURS** — auth TERMINÉE ✅, users TERMINÉ ✅, shops/products TERMINÉS ✅, orders/payments TERMINÉS ✅, wallet TERMINÉ ✅ ; reste : lives/videos → chats/feed/follows/search/notifications/moderation/deliveries |
 
 ## Décisions actées
 
@@ -64,6 +64,21 @@
 - [x] Specs : products.service.spec.ts (19 tests — création/devise/ownership, transitions, SKU, médias, stock vs réservé, curseur, soft delete).
 - Gate module : prisma validate + build + lint OK, **8 suites / 120 tests verts**.
 
+### orders/payments ✅ TERMINÉ
+- [x] `cart.service`/`orders.service` : panier → commande (CART_EMPTY, OUT_OF_STOCK, SHOP_NOT_VERIFIED), frais plateforme 2,5 % (PLATFORM_FEE_BPS) + TVA pays UE-OHADA 17,5 % (DEFAULT_VAT_BPS) sur base HT nette (subtotal − remise + livraison), coupons PERCENT/FIXED bornés avec usedCount, réservations stock (StockReservation), machine à états OrderStatus via `transitions.ts`, prix en unités mineures strictes (`money.ts`).
+- [x] `payments.service` : init webflow provider, webhook idempotent (P2002/dedup signature), seuils anti-fraude, remboursements partiels/totaux avec mise à jour escrow, statuts PaymentStatus.
+- [x] Controllers + modules enregistrés dans `app.module.ts`.
+- [x] Specs : orders.service.spec.ts + cart.service.spec.ts + payments.service.spec.ts.
+
+### wallet ✅ TERMINÉ
+- [x] DTOs : AdjustBalanceDto, TransferWalletDto, RequestWithdrawalDto, ConvertCoinsDto, SetWalletFrozenDto, devise par défaut `XOF` (DEFAULT_WALLET_CURRENCY).
+- [x] `wallet.service` : init/getOrCreate upsert `(userId, currency)` XOF par défaut + rattrapage course P2002 ; credit/debit avec garde d'atomicité `updateMany({ where: { id, balanceMinor: { gte: amount } } })` → 0 ligne touchée = INSUFFICIENT_BALANCE (AFRI-WALLET-001), y compris cours concurrentiel ; gel des écritures si flag `frozen` = WALLET_FROZEN (credit/debit/withdraw/convert/transfer) ; **idempotence** via `LedgerTransaction.idempotencyKey` (contrainte unique du schéma) + relation `WalletTransaction.ledgerTransactionId` — double soumission ⇒ transaction existante renvoyée, jamais de double débit ; retrait contrôlé contre la somme des WITHDRAW du jour vs `dailyLimitMinor` = WITHDRAWAL_LIMIT_EXCEEDED (AFRI-WALLET-002, statut PENDING) ; conversion coins→mineures via FxRate COIN→devise, repli config `COINS_PER_CURRENCY_MINOR`, arrondi entier exact ; transfert multi-devises refusé CURRENCY_MISMATCH ; historique paginé par curseur keyset `(createdAt,id desc)` ; setFrozen réservé staff.
+- [x] Schéma : ajout `Wallet.frozen Boolean @default(false)` + migration hors ligne `0002_wallet_frozen` (même politique que 0001_init, application reportée faute d'instance Postgres).
+- [x] `wallet.controller` (GET /wallet, GET /wallet/transactions, POST transfer/withdraw/convert, PATCH :id/frozen) + `wallet.module` enregistrés dans `app.module.ts`.
+- [x] Stubs : enums `WalletTransactionType`, `LedgerDirection`, `LedgerAccountType` ajoutés à `tests/prisma-client-stub.js`, `PaymentPurpose` aligné sur le schéma réel.
+- [x] Specs : wallet.service.spec.ts (31 tests — init/création idempotente + P2002 race, credit OK, debit solde insuffisant AFRI-WALLET-001, cours concurrent updateMany→count 0, double idempotencyKey → transaction existante, WALLET_FROZEN sur credit/debit/withdraw, withdrawal > dailyLimit AFRI-WALLET-002, conversion coins→money arrondie en mineures exactes, CURRENCY_MISMATCH, erreurs Prisma remontées).
+- Gate module : prisma validate + build + lint OK, **12 suites / 200 tests verts**.
+
 ## Conventions
 
 - Un fichier à la fois, build vert avant chaque commit ; gate complète : `npx prisma validate && npm run build && npm run lint && npm test`.
@@ -73,8 +88,8 @@
 
 ## PROCHAINE ACTION
 
-**Module orders/payments** (étape 4, suite) : dto → order.service (panier → commande, transitions OrderStatus selon `transitions.ts`, réservation stock via StockReservation TTL + commit/release, prix en unités mineures via `money.ts`) → payment.service (init webflow provider, webhook idempotent, statuts PaymentStatus) → controllers → modules → enregistrement app.module.ts → specs → gate → commit. Puis wallet → lives/videos → chats/feed/follows/search/notifications/moderation/deliveries.
+**Module lives/videos** (étape 4, suite) : mêmes fichiers squelettes vides à implémenter (`src/modules/lives/*`, `src/modules/videos/*`) — vérifier `wc -c` avant d'écrire. dto → live.service (création/démarrage/fin de direct, streamKey via StorageService/presign, gift tipping débitant le wallet via `WalletService.debit` avec idempotencyKey, escrow vendeur) + video.service (upload presign, transcode queue, publication feed) → controllers → modules → enregistrement app.module.ts → specs → gate → commit. **Préalable tests** : compléter `tests/prisma-client-stub.js` si des enums manquants y figurent encore (WalletTransactionType et LedgerDirection ont été ajoutés lors du module wallet ; penser à LiveStatus/VideoStatus etc. selon le schéma). Puis chats/feed/follows/search/notifications/moderation/deliveries.
 
 Notes :
-- La migration `0001_init` reste à appliquer (`prisma migrate deploy`) dès qu'une base Postgres est disponible.
+- Les migrations `0001_init` et `0002_wallet_frozen` restent à appliquer (`prisma migrate deploy`) dès qu'une base Postgres est disponible.
 - Correction faite en passant : `toMinor()` utilisait un arrondi flottant (`Math.round(x*factor*1e6)/1e6`) qui pouvait renvoyer un non-entier ; réécrit en calcul décimal exact sur chaînes (BigInt), couvert par money.spec.ts.

@@ -96,8 +96,8 @@ describe('OrdersService.createFromCart — comptabilité', () => {
     const data = tx.order.create.mock.calls[0][0].data;
     expect(data.subtotalMinor).toBe(10_000);
     expect(data.feeMinor).toBe(250); // floor(10000*250/10000)
-    expect(data.taxMinor).toBe(1_793); // floor(10000*1750/10000)
-    expect(data.totalMinor).toBe(12_043);
+    expect(data.taxMinor).toBe(1_750); // TVA sur la base HT : floor(10000*1750/10000), pas sur subtotal+fee
+    expect(data.totalMinor).toBe(12_000); // 10000 + 0 + 0 + 250 + 1750
     expect(data.status).toBe(OrderStatus.PENDING);
     expect(data.expiresAt.getTime() - Date.now()).toBeLessThanOrEqual(30 * 60 * 1000);
   });

@@ -43,7 +43,7 @@ const KycDocType = {
   PROOF_OF_ADDRESS: 'PROOF_OF_ADDRESS',
   MOBILE_MONEY_ACCOUNT: 'MOBILE_MONEY_ACCOUNT',
 };
-const DevicePlatform = { FCM: 'FCM', HMS: 'HMS', APNS: 'APNS', WEB: 'WEB' };
+const DevicePlatform = { IOS: 'IOS', ANDROID: 'ANDROID', WEB: 'WEB' };
 const AuthProvider = { PHONE: 'PHONE', EMAIL: 'EMAIL', GOOGLE: 'GOOGLE', FACEBOOK: 'FACEBOOK', APPLE: 'APPLE', TIKTOK: 'TIKTOK' };
 const OtpChannel = { SMS: 'SMS', WHATSAPP: 'WHATSAPP', EMAIL: 'EMAIL' };
 const UserStatus = { ACTIVE: 'ACTIVE', SUSPENDED: 'SUSPENDED', BANNED: 'BANNED', DELETED: 'DELETED' };
@@ -60,26 +60,66 @@ const Category = {
   NEWS: 'NEWS',
   OTHER: 'OTHER',
 };
-const ProductStatus = { DRAFT: 'DRAFT', ACTIVE: 'ACTIVE', OUT_OF_STOCK: 'OUT_OF_STOCK', ARCHIVED: 'ARCHIVED' };
-const PaymentPurpose = { ORDER: 'ORDER', DIRECT: 'DIRECT', TOPUP: 'TOPUP' };
-const PaymentMethod = { MOBILE_MONEY: 'MOBILE_MONEY', CARD: 'CARD', WALLET: 'WALLET' };
-const PaymentProviderName = {
-  ORANGE_MONEY: 'ORANGE_MONEY',
-  MTN_MOMO: 'MTN_MOMO',
-  MOOV_MONEY: 'MOOV_MONEY',
-  WAVE: 'WAVE',
-  MPESA: 'MPESA',
-  FLUTTERWAVE: 'FLUTTERWAVE',
-  PAYSTACK: 'PAYSTACK',
-  CINETPAY: 'CINETPAY',
-  WALLET: 'WALLET',
-  MOCK: 'MOCK',
+const ProductStatus = {
+  DRAFT: 'DRAFT',
+  ACTIVE: 'ACTIVE',
+  PAUSED: 'PAUSED',
+  SOLD_OUT: 'SOLD_OUT',
+  ARCHIVED: 'ARCHIVED',
 };
+const MediaKind = { IMAGE: 'IMAGE', VIDEO_360: 'VIDEO_360', AR: 'AR' };
+const StockReservationStatus = { HELD: 'HELD', CONFIRMED: 'CONFIRMED', RELEASED: 'RELEASED' };
+const PaymentPurpose = { ORDER: 'ORDER', WALLET_TOPUP: 'WALLET_TOPUP', TIP: 'TIP', PROMOTION: 'PROMOTION' };
+const PaymentMethod = {
+  MOBILE_MONEY: 'MOBILE_MONEY',
+  CARD: 'CARD',
+  WALLET: 'WALLET',
+  BANK_TRANSFER: 'BANK_TRANSFER',
+  CASH_ON_DELIVERY: 'CASH_ON_DELIVERY',
+};
+const PaymentProviderName = { PAYSTACK: 'PAYSTACK', FLUTTERWAVE: 'FLUTTERWAVE', ORANGE_MONEY: 'ORANGE_MONEY', MTN_MOMO: 'MTN_MOMO', WAVE: 'WAVE', MOCK: 'MOCK' };
 const EscrowStatus = { HELD: 'HELD', RELEASED: 'RELEASED', REFUNDED: 'REFUNDED', DISPUTED: 'DISPUTED' };
 const FraudDecision = { ALLOW: 'ALLOW', REVIEW: 'REVIEW', BLOCK: 'BLOCK' };
-const WebhookStatus = { RECEIVED: 'RECEIVED', PROCESSED: 'PROCESSED', FAILED: 'FAILED' };
-const MediaKind = { IMAGE: 'IMAGE', VIDEO: 'VIDEO' };
-const StockReservationStatus = { ACTIVE: 'ACTIVE', COMMITTED: 'COMMITTED', RELEASED: 'RELEASED', EXPIRED: 'EXPIRED' };
+const WebhookStatus = { RECEIVED: 'RECEIVED', PROCESSED: 'PROCESSED', FAILED: 'FAILED', IGNORED: 'IGNORED' };
+
+// --- Enums ajoutés pour les specs orders/payments (synchrones avec schema.prisma)
+const CouponType = { PERCENT: 'PERCENT', FIXED: 'FIXED' };
+const OrderSource = { FEED: 'FEED', LIVE: 'LIVE', SHOP: 'SHOP' };
+
+// --- Enums ajoutés pour les specs wallet (synchrones avec schema.prisma)
+const WalletTransactionType = {
+  TOPUP: 'TOPUP',
+  WITHDRAW: 'WITHDRAW',
+  TRANSFER_IN: 'TRANSFER_IN',
+  TRANSFER_OUT: 'TRANSFER_OUT',
+  PAYMENT: 'PAYMENT',
+  REFUND: 'REFUND',
+  PAYOUT: 'PAYOUT',
+  TIP: 'TIP',
+  SALE: 'SALE',
+};
+const LedgerDirection = { DEBIT: 'DEBIT', CREDIT: 'CREDIT' };
+const LedgerAccountType = {
+  USER_WALLET: 'USER_WALLET',
+  ESCROW: 'ESCROW',
+  PLATFORM_REVENUE: 'PLATFORM_REVENUE',
+  PROVIDER_CLEARING: 'PROVIDER_CLEARING',
+  PAYOUT_CLEARING: 'PAYOUT_CLEARING',
+};
+
+// --- Enums ajoutés pour les specs videos/lives (synchrones avec schema.prisma)
+const VideoStatus = {
+  UPLOADING: 'UPLOADING',
+  PROCESSING: 'PROCESSING',
+  READY: 'READY',
+  PUBLISHED: 'PUBLISHED',
+  REJECTED: 'REJECTED',
+  DELETED: 'DELETED',
+};
+const Visibility = { PUBLIC: 'PUBLIC', FOLLOWERS: 'FOLLOWERS', PRIVATE: 'PRIVATE' };
+const RemixType = { DUET: 'DUET', STITCH: 'STITCH' };
+const UploadStatus = { INITIATED: 'INITIATED', COMPLETED: 'COMPLETED', ABORTED: 'ABORTED', FAILED: 'FAILED' };
+const LiveStatus = { SCHEDULED: 'SCHEDULED', LIVE: 'LIVE', ENDED: 'ENDED', CANCELLED: 'CANCELLED' };
 
 class PrismaClient {}
 
@@ -106,37 +146,14 @@ module.exports = {
   EscrowStatus,
   FraudDecision,
   WebhookStatus,
+  CouponType,
+  OrderSource,
+  WalletTransactionType,
+  LedgerDirection,
+  LedgerAccountType,
+  VideoStatus,
+  Visibility,
+  RemixType,
+  UploadStatus,
+  LiveStatus,
 };
-
-// --- Enums ajoutés pour les specs orders/payments (synchrones avec schema.prisma)
-const CouponType = { PERCENT: 'PERCENT', FIXED: 'FIXED' };
-const OrderSource = { FEED: 'FEED', LIVE: 'LIVE', SHOP: 'SHOP' };
-module.exports.CouponType = CouponType;
-module.exports.OrderSource = OrderSource;
-
-// --- Enums ajoutés pour les specs wallet (synchrones avec schema.prisma)
-const WalletTransactionType = {
-  TOPUP: 'TOPUP',
-  WITHDRAW: 'WITHDRAW',
-  TRANSFER_IN: 'TRANSFER_IN',
-  TRANSFER_OUT: 'TRANSFER_OUT',
-  PAYMENT: 'PAYMENT',
-  REFUND: 'REFUND',
-  PAYOUT: 'PAYOUT',
-  TIP: 'TIP',
-  SALE: 'SALE',
-};
-const LedgerDirection = { DEBIT: 'DEBIT', CREDIT: 'CREDIT' };
-const LedgerAccountType = {
-  USER_WALLET: 'USER_WALLET',
-  ESCROW: 'ESCROW',
-  PLATFORM_REVENUE: 'PLATFORM_REVENUE',
-  PROVIDER_CLEARING: 'PROVIDER_CLEARING',
-  PAYOUT_CLEARING: 'PAYOUT_CLEARING',
-};
-// NB : PaymentPurpose ci-dessus utilisait des clés historiques ; on aligne
-// sur le schéma Prisma réel (ORDER / WALLET_TOPUP / TIP / PROMOTION).
-module.exports.PaymentPurpose = { ORDER: 'ORDER', WALLET_TOPUP: 'WALLET_TOPUP', TIP: 'TIP', PROMOTION: 'PROMOTION' };
-module.exports.WalletTransactionType = WalletTransactionType;
-module.exports.LedgerDirection = LedgerDirection;
-module.exports.LedgerAccountType = LedgerAccountType;
