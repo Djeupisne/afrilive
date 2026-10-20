@@ -147,7 +147,7 @@ export class AuthService {
       where: { provider_providerUserId: { provider: profile.provider, providerUserId: profile.providerUserId } },
       include: { user: true },
     });
-    const user = identity ? identity.user : (await this.linkOrCreateFromSocial(profile, ctx)).user;
+    const user = identity ? identity.user : (await this.linkOrCreateFromSocial(profile)).user;
     if (user.status !== 'ACTIVE') {
       throw new AppException(ERROR_CODES.ACCOUNT_SUSPENDED, { status: HttpStatus.FORBIDDEN });
     }
@@ -155,7 +155,7 @@ export class AuthService {
   }
 
   /** Rattache l'identité à un compte existant (email vérifié côté fournisseur) ou crée un compte. */
-  private async linkOrCreateFromSocial(profile: VerifiedSocialProfile, ctx: { ip?: string }) {
+  private async linkOrCreateFromSocial(profile: VerifiedSocialProfile) {
     if (profile.email) {
       const existing = await this.prisma.user.findUnique({ where: { email: profile.email } });
       if (existing) {

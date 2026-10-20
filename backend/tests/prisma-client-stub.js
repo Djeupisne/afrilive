@@ -24,8 +24,18 @@ const PaymentStatus = {
 };
 
 const KycStatus = { NONE: 'NONE', PENDING: 'PENDING', APPROVED: 'APPROVED', REJECTED: 'REJECTED' };
+const KycDocType = {
+  ID_CARD: 'ID_CARD',
+  PASSPORT: 'PASSPORT',
+  SELFIE: 'SELFIE',
+  PROOF_OF_ADDRESS: 'PROOF_OF_ADDRESS',
+  MOBILE_MONEY_ACCOUNT: 'MOBILE_MONEY_ACCOUNT',
+};
 const DevicePlatform = { FCM: 'FCM', HMS: 'HMS', APNS: 'APNS', WEB: 'WEB' };
 const UserRole = { CUSTOMER: 'CUSTOMER', SELLER: 'SELLER', ADMIN: 'ADMIN' };
+const AuthProvider = { PHONE: 'PHONE', EMAIL: 'EMAIL', GOOGLE: 'GOOGLE', FACEBOOK: 'FACEBOOK', APPLE: 'APPLE', TIKTOK: 'TIKTOK' };
+const OtpChannel = { SMS: 'SMS', WHATSAPP: 'WHATSAPP', EMAIL: 'EMAIL' };
+const UserStatus = { ACTIVE: 'ACTIVE', SUSPENDED: 'SUSPENDED', BANNED: 'BANNED', DELETED: 'DELETED' };
 
 class PrismaClient {}
 
@@ -35,6 +45,10 @@ module.exports = {
   OrderStatus,
   PaymentStatus,
   KycStatus,
+  KycDocType,
   DevicePlatform,
   UserRole,
+  AuthProvider,
+  OtpChannel,
+  UserStatus,
 };
