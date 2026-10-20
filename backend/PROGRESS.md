@@ -7,7 +7,7 @@
 | 1 | Fondations (NestJS, config, erreurs RFC 7807, guards/interceptors, utils money/pagination, enums) | **TERMINÉE** |
 | 2 | Prisma (schema, enums, migrations) | **TERMINÉE** — migration `0001_init` générée hors ligne (`prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script`) ; application en base (`prisma migrate deploy`) **reportée** (aucune instance Postgres disponible dans l'environnement de dev) |
 | 3 | Intégrations (redis, storage, queue, sms, push, email) + specs utils | **TERMINÉE** (gate : prisma validate + build + lint + test = 55/55 verts) |
-| 4 | Modules métier (auth en premier, puis users/wallet/payments/orders/lives/…) | À FAIRE |
+| 4 | Modules métier (auth en premier, puis users/wallet/payments/orders/lives/…) | **EN COURS** — auth TERMINÉE ✅, users TERMINÉ ✅ ; reste : shops/products → orders/payments → wallet → lives/videos → chats/feed/follows/search/notifications/moderation/deliveries |
 
 ## Décisions actées
 
@@ -29,6 +29,28 @@
 - [x] Enregistrement des modules dans `app.module.ts`.
 - [x] Specs : money.spec.ts, pagination.spec.ts, enums/transitions.spec.ts, sms.service.spec.ts.
 
+## État détaillé — Étape 4 (Modules métier)
+
+### auth ✅ TERMINÉ
+- [x] DTOs (otp, register, social, 2fa, kyc).
+- [x] `otp.service` : TTL 5 min, hash SHA-256, rate-limit setNx, compteur de tentatives (max 3), consommation au succès.
+- [x] `token.service` : access JWT court + refresh rotation avec détection de réutilisation (révocation de toute la famille), sessions Redis/Prisma.
+- [x] `jwt.strategy` : refus des tokens `pending2fa`, alimente `AuthUser.sessionId`.
+- [x] Social verifiers Google/Facebook/Apple : JWKS maison + convertisseur JWK→PEM DER (`jwt-id-token.util.ts`), validé RS256 positif/négatif.
+- [x] `two-factor.service` : AES-256-GCM au repos, backup codes à usage unique, fenêtre TOTP ±1 pas (impl manual checkTotp — signature otplib 12.0.1 limitée à 2 args).
+- [x] `auth.service` : OTP-first, social (linkOrCreate), limite de devices Redis (`sAdd(key, ttlSec, ...members)`), défi 2FA via pendingToken.
+- [x] `auth.controller` : request/verify OTP, register, social, 2fa complete/refresh/logout, 2fa setup/enable/disable/recovery-codes, me, kyc upload-url/submit/documents.
+- [x] KYC : `kyc.service`/`kyc.controller` (presign StorageService.buildObjectKey('kyc'), garde KYC_ALREADY_PENDING, PENDING/REVIEWING/APPROVED/REJECTED, ownership).
+- [x] `auth.module` enregistré dans `app.module.ts`.
+- [x] Specs : otp.service.spec.ts (10 tests).
+
+### users ✅ TERMINÉ
+- [x] DTOs : update-profile, username, settings, contact-channels.
+- [x] `users.service` : profil public avec cache Redis TTL 60s + flag `viewerBlocked`, `getMe` auto-masking PII (maskPhone/maskEmail), conflits username/email/phone, blocages (auto-blocage interdit, teardown des follows réciproques), pagination keyset par curseur (listRelations/listBlocks), settings upsert, deactivate soft-delete + purge cache.
+- [x] `users.controller` : /users/me (+username/settings/phone/email/delete), /users/blocks, /users/u/:username (+followers/following).
+- [x] `users.module` enregistré dans `app.module.ts`.
+- [x] Specs : users.service.spec.ts (17 tests). Gate : prisma validate + build + lint OK, **6 suites / 81 tests verts**.
+
 ## Conventions
 
 - Un fichier à la fois, build vert avant chaque commit ; gate complète : `npx prisma validate && npm run build && npm run lint && npm test`.
@@ -38,9 +60,8 @@
 
 ## PROCHAINE ACTION
 
-**Module auth** (étape 4, en premier) : dto → otp.service → token.service → strategies/jwt.strategy → social/*.verifier → two-factor.service → auth.service → auth.controller → kyc.service/controller → auth.module → enregistrement app.module.ts → specs → gate → commit.
+**Module shops/products** (étape 4, suite) : dto → shop.service (slug unique, statut boutique, produits CRUD, stock/variantes/prix en unités mineures) → controllers → module → enregistrement app.module.ts → specs → gate → commit. Puis orders/payments → wallet → lives/videos → chats/feed/follows/search/notifications/moderation/deliveries.
 
 Notes :
-- `src/modules/auth/*` existe en squelettes vides (fichiers placeholder à remplir ; `otp.service.spec.ts` contient une spec placeholder à remplacer par la vraie spec OTP au moment du module auth).
 - La migration `0001_init` reste à appliquer (`prisma migrate deploy`) dès qu'une base Postgres est disponible.
 - Correction faite en passant : `toMinor()` utilisait un arrondi flottant (`Math.round(x*factor*1e6)/1e6`) qui pouvait renvoyer un non-entier ; réécrit en calcul décimal exact sur chaînes (BigInt), couvert par money.spec.ts.
