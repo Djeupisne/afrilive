@@ -19,12 +19,12 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { IdempotencyInterceptor } from './common/interceptors/idempotency.interceptor';
+import { AuthModule } from './modules/auth/auth.module';
 
 /**
  * Racine de l'application.
- * [HYPOTHÈSE] Les modules métier (auth, users, wallet…) seront importés ici à
- * mesure de leur implémentation (étape 4). Ils sont actuellement des fichiers
- * vides et ne peuvent pas être chargés.
+ * Modules métier : auth enregistré (étape 4 en cours) ; users/wallet/etc.
+ * suivront au fil de l'implémentation.
  */
 @Module({
   imports: [
@@ -54,6 +54,7 @@ import { IdempotencyInterceptor } from './common/interceptors/idempotency.interc
     SmsModule,
     PushModule,
     EmailModule,
+    AuthModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
