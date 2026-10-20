@@ -8,6 +8,7 @@ import {
   PaymentProviderName,
   PaymentStatus,
   Prisma,
+  WebhookStatus,
 } from '@prisma/client';
 import { AppException } from '../../common/errors/app.exception';
 import { ERROR_CODES } from '../../common/errors/error-codes';
@@ -144,9 +145,12 @@ export class PaymentsService {
   // ------------------------------------------------------------- Confirmation
 
   /** Confirmation interne (callback opérateur ou job de polling). */
-  async confirm(paymentId: string, dto: ConfirmPaymentDto) {
+  async confirm(paymentId: string, dto: ConfirmPaymentDto, actor?: Actor) {
     const payment = await this.prisma.payment.findUnique({ where: { id: paymentId } });
     if (!payment) throw AppException.notFound(ERROR_CODES.NOT_FOUND, 'Paiement introuvable.');
+    if (actor && !isStaff(actor.role as never) && payment.userId !== actor.id) {
+      throw AppException.forbidden(ERROR_CODES.NOT_FOUND, 'Ce paiement ne vous appartient pas.');
+    }
     if (payment.status === PaymentStatus.SUCCEEDED) return payment; // idempotent
     if (payment.status !== PaymentStatus.INITIATED && payment.status !== PaymentStatus.PENDING) {
       throw AppException.unprocessable(
@@ -177,7 +181,7 @@ export class PaymentsService {
   async handleWebhook(provider: PaymentProviderName, eventId: string, signatureValid: boolean, payload: Record<string, unknown>) {
     if (!signatureValid) {
       await this.prisma.webhookEvent.create({
-        data: { provider, eventId: eventId || `noid-${Date.now()}`, signatureValid: false, payload: payload as Prisma.InputJsonValue, status: 'FAILED' },
+        data: { provider, eventId: eventId || `noid-${Date.now()}`, signatureValid: false, payload: payload as Prisma.InputJsonValue, status: WebhookStatus.FAILED },
       });
       throw AppException.forbidden(ERROR_CODES.PAYMENT_FAILED, 'Signature webhook invalide.');
     }
@@ -210,7 +214,10 @@ export class PaymentsService {
 
     await this.prisma.webhookEvent.update({
       where: { id: stored.id },
-      data: { processedAt: new Date(), status: result.handled ? 'PROCESSED' : 'IGNORED' },
+      data: {
+        processedAt: new Date(),
+        status: result.handled ? WebhookStatus.PROCESSED : WebhookStatus.RECEIVED,
+      },
     });
     return result;
   }
