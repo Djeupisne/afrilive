@@ -21,6 +21,8 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { IdempotencyInterceptor } from './common/interceptors/idempotency.interceptor';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { ShopsModule } from './modules/shops/shops.module';
+import { ProductsModule } from './modules/products/products.module';
 
 /**
  * Racine de l'application.
@@ -57,6 +59,8 @@ import { UsersModule } from './modules/users/users.module';
     EmailModule,
     AuthModule,
     UsersModule,
+    ShopsModule,
+    ProductsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

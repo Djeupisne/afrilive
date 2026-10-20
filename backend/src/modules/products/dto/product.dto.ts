@@ -7,7 +7,6 @@ import {
   IsArray,
   IsEnum,
   IsInt,
-  IsNumber,
   IsObject,
   IsOptional,
   IsString,
@@ -15,7 +14,6 @@ import {
   Max,
   MaxLength,
   Min,
-  ValidateNested,
 } from 'class-validator';
 
 /** Slug produit : minuscules, chiffres et tirets uniquement. */
