@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { User, UserSettings } from '@prisma/client';
+import { UserSettings } from '@prisma/client';
 import { ERROR_CODES } from '../../common/errors/error-codes';
 import { AppException } from '../../common/errors/app.exception';
 import { PrismaService } from '../../database/prisma.service';
@@ -97,7 +97,7 @@ export class UsersService {
       include: { settings: true, shop: { select: { id: true, name: true, slug: true, status: true } } },
     });
     if (!user) throw AppException.notFound(ERROR_CODES.NOT_FOUND, 'Utilisateur introuvable.');
-    const { phone, email, deletedAt, ...rest } = user;
+    const { phone, email, deletedAt: _deletedAt, ...rest } = user;
     return {
       ...rest,
       phone: phone ? maskPhone(phone) : null,
