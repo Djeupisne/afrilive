@@ -7,7 +7,7 @@
 | 1 | Fondations (NestJS, config, erreurs RFC 7807, guards/interceptors, utils money/pagination, enums) | **TERMINÉE** |
 | 2 | Prisma (schema, enums, migrations) | **TERMINÉE** — migration `0001_init` générée hors ligne (`prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script`) ; application en base (`prisma migrate deploy`) **reportée** (aucune instance Postgres disponible dans l'environnement de dev) |
 | 3 | Intégrations (redis, storage, queue, sms, push, email) + specs utils | **TERMINÉE** (gate : prisma validate + build + lint + test = 55/55 verts) |
-| 4 | Modules métier (auth en premier, puis users/wallet/payments/orders/lives/…) | **EN COURS** — auth TERMINÉE ✅, users TERMINÉ ✅ ; reste : shops/products → orders/payments → wallet → lives/videos → chats/feed/follows/search/notifications/moderation/deliveries |
+| 4 | Modules métier (auth en premier, puis users/wallet/payments/orders/lives/…) | **EN COURS** — auth TERMINÉE ✅, users TERMINÉ ✅, shops/products TERMINÉS ✅ ; reste : orders/payments → wallet → lives/videos → chats/feed/follows/search/notifications/moderation/deliveries |
 
 ## Décisions actées
 
@@ -51,6 +51,19 @@
 - [x] `users.module` enregistré dans `app.module.ts`.
 - [x] Specs : users.service.spec.ts (17 tests). Gate : prisma validate + build + lint OK, **6 suites / 81 tests verts**.
 
+### shops ✅ TERMINÉ
+- [x] DTOs : CreateShopDto (nom, slug regex + réservés, ISO country/currency, companyName/taxId), UpdateShopDto (vitrine : logo/banner/theme/returnPolicy/openingHours).
+- [x] `shops.service` : une boutique par utilisateur (ownerId unique), slug généré depuis le nom (slugify sans diacritiques) + suffixage -2/-3… jusqu'à unicité, slugs réservés rejetés ; fiche publique par slug avec cache Redis TTL 60s et projection select (taxId jamais exposé) ; update owner/staff avec invalidation cache ; setStatus (owner → CLOSED seulement, SUSPENDED/réouverture = staff) ; `requestMediaUploadUrl` via presign StorageService + CDN ; `assertSellable` (boutique ACTIVE + KYC APPROVED sinon SHOP_NOT_VERIFIED).
+- [x] `shops.controller` (GET by slug @Public, /shops/mine, PATCH, status, upload-url) + `shops.module` enregistré dans `app.module.ts`.
+- [x] Specs : shops.service.spec.ts (20 tests — slugify, create conflits/réservés/suffixage/défauts, cache+masking, gardes statut, assertSellable, updateByOwner).
+
+### products ✅ TERMINÉ
+- [x] DTOs : CreateProductDto (category enum Prisma, basePriceMinor entier ≥1, devise optionnelle), UpdateProductDto, SetProductStatusDto, CreateVariantDto (SKU, prix mineures, compareAt/sale, poids), AdjustStockDto (delta signé + seuil), AddMediaDto (clés 1–10, position de départ).
+- [x] `products.service` : CRUD scopé propriété boutique (owner ou staff) ; création en DRAFT, devise figée sur celle de la boutique ; graphe de transitions défensif (DRAFT→ACTIVE/ARCHIVED, ACTIVE→OUT_OF_STOCK/ARCHIVED, OUT_OF_STOCK→ACTIVE/ARCHIVED, ARCHIVED définitif) ; activation exige ≥1 variante ; SKU normalisé majuscules + unicité (pré-check + P2002 race → 409) ; médias en positions séquentielles ; adjustStock upsert incrémental refusant solde disponible < réservé (OUT_OF_STOCK) ; pagination keyset par curseur (exclut soft-deleted) ; suppression logique deletedAt.
+- [x] `products.controller` + `products.module` enregistrés dans `app.module.ts`.
+- [x] Specs : products.service.spec.ts (19 tests — création/devise/ownership, transitions, SKU, médias, stock vs réservé, curseur, soft delete).
+- Gate module : prisma validate + build + lint OK, **8 suites / 120 tests verts**.
+
 ## Conventions
 
 - Un fichier à la fois, build vert avant chaque commit ; gate complète : `npx prisma validate && npm run build && npm run lint && npm test`.
@@ -60,7 +73,7 @@
 
 ## PROCHAINE ACTION
 
-**Module shops/products** (étape 4, suite) : dto → shop.service (slug unique, statut boutique, produits CRUD, stock/variantes/prix en unités mineures) → controllers → module → enregistrement app.module.ts → specs → gate → commit. Puis orders/payments → wallet → lives/videos → chats/feed/follows/search/notifications/moderation/deliveries.
+**Module orders/payments** (étape 4, suite) : dto → order.service (panier → commande, transitions OrderStatus selon `transitions.ts`, réservation stock via StockReservation TTL + commit/release, prix en unités mineures via `money.ts`) → payment.service (init webflow provider, webhook idempotent, statuts PaymentStatus) → controllers → modules → enregistrement app.module.ts → specs → gate → commit. Puis wallet → lives/videos → chats/feed/follows/search/notifications/moderation/deliveries.
 
 Notes :
 - La migration `0001_init` reste à appliquer (`prisma migrate deploy`) dès qu'une base Postgres est disponible.
