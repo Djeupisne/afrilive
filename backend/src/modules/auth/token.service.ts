@@ -95,6 +95,15 @@ export class TokenService {
     return this.signAccess({ sub: userId, role, pending2fa: true }, '5m');
   }
 
+  /** Vérifie la signature d'un token pending2fa (pas de session associée à ce stade). */
+  async verifyPendingToken(token: string): Promise<AccessPayload> {
+    try {
+      return await this.jwt.verifyAsync<AccessPayload>(token, { secret: this.accessSecret });
+    } catch {
+      throw new AppException(ERROR_CODES.TOKEN_EXPIRED, { status: HttpStatus.UNAUTHORIZED });
+    }
+  }
+
   async verifyAccessToken(payloadLike: string): Promise<AccessPayload> {
     try {
       return await this.jwt.verifyAsync<AccessPayload>(payloadLike, {
@@ -114,7 +123,7 @@ export class TokenService {
    */
   async rotateRefreshToken(refreshToken: string): Promise<TokenPair> {
     const hash = hashToken(refreshToken);
-    const session = await this.prisma.session.findUnique({ where: { refreshTokenHash: hash } });
+    const session = await this.prisma.session.findFirst({ where: { refreshTokenHash: hash } });
     if (!session) {
       throw new AppException(ERROR_CODES.INVALID_CREDENTIALS, {
         status: HttpStatus.UNAUTHORIZED,
