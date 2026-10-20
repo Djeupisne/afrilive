@@ -143,8 +143,9 @@ describe('PaymentsService.initiate', () => {
     const { prisma, service } = makeMocks();
     prisma.order.findUnique.mockResolvedValue(pendingOrder);
     const dup = payRow({ id: 'pay-race' });
+    // Le service relit le doublon par sa cle d'idempotence (contrainte unique).
     prisma.payment.findUnique.mockImplementation((args: { where?: Record<string, unknown> }) =>
-      args?.where?.id ? Promise.resolve(dup) : Promise.resolve(null),
+      args?.where?.idempotencyKey ? Promise.resolve(dup) : Promise.resolve(null),
     );
     const err = Object.assign(new Error('unique'), { code: 'P2002' });
     prisma.payment.create.mockRejectedValueOnce(err);
