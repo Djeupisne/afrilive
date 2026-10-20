@@ -50,12 +50,22 @@ export class TwoFactorService {
 
   }
 
-  /** Vérifie un code TOTP avec une fenêtre de tolérance ±1 pas (temps explicite, sans état global). */
+  /**
+   * Vérifie un code TOTP avec une fenêtre explicite de ±1 pas (30 s), sans
+   * état global ni fenêtre implicite du preset par défaut (otplib 12 a une
+   * fenêtre par défaut non nulle qui élargirait silencieusement la tolérance).
+   * create() doit recevoir les options COMPLÈTES (keyEncoder/keyDecoder du
+   * preset inclus) — d'où le spread de allOptions().
+   */
   private checkTotp(code: string, secret: string): boolean {
     const now = Math.floor(Date.now() / 1000);
+    const base = { ...authenticator.allOptions(), window: 0 };
     for (const delta of [-30, 0, 30]) {
-      const expected = authenticator.generate(secret, { time: now + delta });
-      if (expected === code) return true;
+      try {
+        if (authenticator.create({ ...base, time: now + delta }).generate(secret) === code) return true;
+      } catch {
+        /* secret illisible : on passe au pas suivant */
+      }
     }
     return false;
   }
