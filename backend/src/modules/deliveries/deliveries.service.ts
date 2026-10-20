@@ -88,7 +88,7 @@ export class DeliveriesService {
   async updateLocation(actor: Actor, lat: number, lng: number) {
     const courier = await this.mustBeCourier(actor.id);
     await this.prisma.courier.update({ where: { id: courier.id }, data: { lat, lng, lastSeenAt: new Date() } });
-    await this.redis.geoAdd(GEO_KEY, [{ member: courier.id, lat, lng }]);
+    await this.redis.geoAdd(GEO_KEY, [{ member: courier.id, longitude: lng, latitude: lat }]);
     return { tracked: true };
   }
 
@@ -102,11 +102,18 @@ export class DeliveriesService {
 
   // ------------------------------------------------------------------ Offres
 
-  /** Diffuse une offre vers les livreurs APPROVED en ligne proches (GEO 10 km). */
-  async broadcastOffers(deliveryId: string): Promise<number> {
-    const near = await this.redis.geoSearch(GEO_KEY, 0, 0, 50, 20).catch(() => []);
-    // fallback : si pas de position Redis, on prend tous les livreurs en ligne.
-    const onlineIds = near.map((n) => n.member);
+  /** Diffuse une offre vers les livreurs APPROVED en ligne proches (GEO Redis). */
+  async broadcastOffers(deliveryId: string, origin?: { lat: number; lng: number }): Promise<number> {
+    let onlineIds: string[] = [];
+    if (origin) {
+      const near = await this.redis
+        .geoSearch(GEO_KEY, origin.lng, origin.lat, 10, 20)
+        .then((rows) => rows.map((r) => r.member))
+        .catch(() => [] as string[]);
+      if (near.length) onlineIds = near;
+    }
+    // Fallback assumé : sans position d'origine ni résultat GEO, on diffuse à
+    // tous les livreurs approuvés en ligne (les offres expirent au TTL de 2 min).
     const couriers = await this.prisma.courier.findMany({
       where: {
         status: CourierStatus.APPROVED,
@@ -134,22 +141,21 @@ export class DeliveriesService {
       where: { courierId: courier.id, status: DeliveryOfferStatus.PENDING, expiresAt: { gt: new Date() } },
       orderBy: { createdAt: 'desc' },
       take: 20,
-      select: { id: true, deliveryId: true, expiresAt: true, delivery: { select: DELIVERY_SELECT } },
+      select: { deliveryId: true, courierId: true, expiresAt: true, createdAt: true, delivery: { select: DELIVERY_SELECT } },
     });
     return { items: rows };
   }
 
   /** Accepte une offre — updateMany atomique : un seul livreur gagne la course. */
-  async acceptOffer(actor: Actor, offerId: string) {
+  async acceptOffer(actor: Actor, deliveryId: string) {
     const courier = await this.mustBeCourier(actor.id);
     const touched = await this.prisma.deliveryOffer.updateMany({
-      where: { id: offerId, courierId: courier.id, status: DeliveryOfferStatus.PENDING, expiresAt: { gt: new Date() } },
+      where: { deliveryId, courierId: courier.id, status: DeliveryOfferStatus.PENDING, expiresAt: { gt: new Date() } },
       data: { status: DeliveryOfferStatus.ACCEPTED },
     });
     if (touched.count === 0) throw AppException.conflict(ERROR_CODES.CONFLICT, 'Offre expirée ou déjà attribuée.');
-    const offer = await this.prisma.deliveryOffer.findUniqueOrThrow({ where: { id: offerId }, select: { deliveryId: true } });
-    await this.assignCourier(offer.deliveryId, courier.id);
-    return { deliveryId: offer.deliveryId, assigned: true };
+    await this.assignCourier(deliveryId, courier.id);
+    return { deliveryId, assigned: true };
   }
 
   // ------------------------------------------------------------- Cycle vie
@@ -245,7 +251,7 @@ export class DeliveriesService {
   private async mustBeCourier(userId: string) {
     const courier = await this.prisma.courier.findUnique({ where: { userId }, select: { id: true, status: true } });
     if (!courier) throw AppException.notFound(ERROR_CODES.NOT_FOUND, 'Profil livreur introuvable.');
-    if (courier.status !== CourierStatus.APPROVED) throw AppException.forbidden(ERROR_CODES.FORBIDDEN, 'Compte livreur non approuvé.');
+    if (courier.status !== CourierStatus.APPROVED) throw AppException.forbidden(ERROR_CODES.ACCOUNT_SUSPENDED, 'Compte livreur non approuvé.');
     return courier;
   }
 }
