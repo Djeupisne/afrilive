@@ -63,6 +63,12 @@ export class CreateOrderDto {
   @IsString()
   @MaxLength(64)
   idempotencyKey?: string;
+
+  @ApiPropertyOptional({ description: 'Code promo de la boutique (remise appliquée au sous-total)' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  couponCode?: string;
 }
 
 /** Transition manuelle d'état de commande (seller/staff selon l'étape). */

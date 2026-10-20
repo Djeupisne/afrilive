@@ -61,6 +61,23 @@ const Category = {
   OTHER: 'OTHER',
 };
 const ProductStatus = { DRAFT: 'DRAFT', ACTIVE: 'ACTIVE', OUT_OF_STOCK: 'OUT_OF_STOCK', ARCHIVED: 'ARCHIVED' };
+const PaymentPurpose = { ORDER: 'ORDER', DIRECT: 'DIRECT', TOPUP: 'TOPUP' };
+const PaymentMethod = { MOBILE_MONEY: 'MOBILE_MONEY', CARD: 'CARD', WALLET: 'WALLET' };
+const PaymentProviderName = {
+  ORANGE_MONEY: 'ORANGE_MONEY',
+  MTN_MOMO: 'MTN_MOMO',
+  MOOV_MONEY: 'MOOV_MONEY',
+  WAVE: 'WAVE',
+  MPESA: 'MPESA',
+  FLUTTERWAVE: 'FLUTTERWAVE',
+  PAYSTACK: 'PAYSTACK',
+  CINETPAY: 'CINETPAY',
+  WALLET: 'WALLET',
+  MOCK: 'MOCK',
+};
+const EscrowStatus = { HELD: 'HELD', RELEASED: 'RELEASED', REFUNDED: 'REFUNDED', DISPUTED: 'DISPUTED' };
+const FraudDecision = { ALLOW: 'ALLOW', REVIEW: 'REVIEW', BLOCK: 'BLOCK' };
+const WebhookStatus = { RECEIVED: 'RECEIVED', PROCESSED: 'PROCESSED', FAILED: 'FAILED' };
 const MediaKind = { IMAGE: 'IMAGE', VIDEO: 'VIDEO' };
 const StockReservationStatus = { ACTIVE: 'ACTIVE', COMMITTED: 'COMMITTED', RELEASED: 'RELEASED', EXPIRED: 'EXPIRED' };
 
@@ -83,4 +100,16 @@ module.exports = {
   ProductStatus,
   MediaKind,
   StockReservationStatus,
+  PaymentPurpose,
+  PaymentMethod,
+  PaymentProviderName,
+  EscrowStatus,
+  FraudDecision,
+  WebhookStatus,
 };
+
+// --- Enums ajoutés pour les specs orders/payments (synchrones avec schema.prisma)
+const CouponType = { PERCENT: 'PERCENT', FIXED: 'FIXED' };
+const OrderSource = { FEED: 'FEED', LIVE: 'LIVE', SHOP: 'SHOP' };
+module.exports.CouponType = CouponType;
+module.exports.OrderSource = OrderSource;
