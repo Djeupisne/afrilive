@@ -10,6 +10,11 @@ import { validateEnv } from './config/env.validation';
 import { PrismaModule } from './database/prisma.module';
 import { RedisModule } from './integrations/redis/redis.module';
 import { RedisService } from './integrations/redis/redis.service';
+import { StorageModule } from './integrations/storage/storage.module';
+import { QueueModule } from './integrations/queue/queue.module';
+import { SmsModule } from './integrations/sms/sms.module';
+import { PushModule } from './integrations/push/push.module';
+import { EmailModule } from './integrations/email/email.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
@@ -44,6 +49,11 @@ import { IdempotencyInterceptor } from './common/interceptors/idempotency.interc
       }),
     }),
     PrismaModule,
+    StorageModule,
+    QueueModule,
+    SmsModule,
+    PushModule,
+    EmailModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
