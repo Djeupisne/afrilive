@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { BullModule } from '@nestjs/bullmq';
+import type { QueueOptions } from 'bullmq';
 
 /**
  * Noms des 6 queues de travail de l'application (constantes stables).
@@ -36,8 +37,10 @@ const DEFAULT_QUEUE_OPTIONS = {
   imports: [
     BullModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        connection: { url: config.get<string>('app.redis.url')! },
+      useFactory: (config: ConfigService): QueueOptions => ({
+        // ioredis accepte une URL de connexion ; cast car les typings bullmq
+        // n'exposent pas l'option `url` dans ConnectionOptions.
+        connection: { url: config.get<string>('app.redis.url')! } as unknown as QueueOptions['connection'],
         defaultJobOptions: DEFAULT_QUEUE_OPTIONS,
       }),
     }),
