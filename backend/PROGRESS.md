@@ -6,7 +6,7 @@
 |---|---|---|
 | 1 | Fondations (NestJS, config, erreurs RFC 7807, guards/interceptors, utils money/pagination, enums) | **TERMINÉE** |
 | 2 | Prisma (schema, enums, migrations) | **TERMINÉE** — migration `0001_init` générée hors ligne (`prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script`) ; application en base (`prisma migrate deploy`) **reportée** (aucune instance Postgres disponible dans l'environnement de dev) |
-| 3 | Intégrations (redis, storage, queue, sms, push, email) + specs utils | **EN COURS** |
+| 3 | Intégrations (redis, storage, queue, sms, push, email) + specs utils | **TERMINÉE** (gate : prisma validate + build + lint + test = 55/55 verts) |
 | 4 | Modules métier (auth en premier, puis users/wallet/payments/orders/lives/…) | À FAIRE |
 
 ## Décisions actées
@@ -20,14 +20,14 @@
 
 ## État détaillé — Étape 3 (Intégrations)
 
-- [ ] B1 redis : `RedisModule` @Global + `RedisService` (get/set/del/incr/expire, setNx+TTL, withLock, GEO, sets+TTL, pub/sub, shutdown propre) ; IdempotencyInterceptor rebasé ; Throttler Redis.
-- [ ] B2 storage : S3 compatible R2/MinIO (presignPut/Get, multipart, delete, copy, CDN, token CDN signé).
-- [ ] B3 queue : BullMQ, 6 queues (video-transcode, moderation-scan, notification-fanout, webhook-process, search-index, payout), backoff exponentiel, removeOnComplete/Fail bornés.
-- [ ] B4 sms : Termii (NG/GH), Africa's Talking (autres pays), repli WhatsApp, SMS_MODE=console, timeouts/retries → AppException.
-- [ ] B5 push : FCM (firebase-admin, APNs via FCM), HMS (HTTP), routage DeviceToken.platform, désactivation propre si clés absentes, purge tokens invalides.
-- [ ] B6 email : nodemailer SMTP ou mode console.
-- [ ] Enregistrement des modules dans `app.module.ts`.
-- [ ] Specs : money.spec.ts, pagination.spec.ts, enums/transitions.spec.ts, sms.service.spec.ts.
+- [x] B1 redis : `RedisModule` @Global + `RedisService` (get/set/del/incr/expire, setNx+TTL, withLock, GEO, sets+TTL, pub/sub, shutdown propre) ; IdempotencyInterceptor rebasé ; Throttler Redis.
+- [x] B2 storage : S3 compatible R2/MinIO (presignPut/Get, multipart, delete, copy, CDN, token CDN signé).
+- [x] B3 queue : BullMQ, 6 queues (video-transcode, moderation-scan, notification-fanout, webhook-process, search-index, payout), backoff exponentiel, removeOnComplete/Fail bornés.
+- [x] B4 sms : Termii (NG/GH), Africa's Talking (autres pays), repli WhatsApp, SMS_MODE=console, timeouts/retries → AppException.
+- [x] B5 push : FCM (firebase-admin, APNs via FCM), HMS (HTTP), routage DeviceToken.platform, désactivation propre si clés absentes, purge tokens invalides.
+- [x] B6 email : nodemailer SMTP ou mode console.
+- [x] Enregistrement des modules dans `app.module.ts`.
+- [x] Specs : money.spec.ts, pagination.spec.ts, enums/transitions.spec.ts, sms.service.spec.ts.
 
 ## Conventions
 
@@ -38,4 +38,9 @@
 
 ## PROCHAINE ACTION
 
-B1 — redis : implémenter `RedisModule`/`RedisService`, rebaser `IdempotencyInterceptor`, brancher le throttler Redis. Puis modules métier : **module auth** en premier (dto → otp → token → jwt.strategy → social verifiers → two-factor → auth.service → auth.controller → kyc → module → app.module → specs → gate → commit).
+**Module auth** (étape 4, en premier) : dto → otp.service → token.service → strategies/jwt.strategy → social/*.verifier → two-factor.service → auth.service → auth.controller → kyc.service/controller → auth.module → enregistrement app.module.ts → specs → gate → commit.
+
+Notes :
+- `src/modules/auth/*` existe en squelettes vides (fichiers placeholder à remplir ; `otp.service.spec.ts` contient une spec placeholder à remplacer par la vraie spec OTP au moment du module auth).
+- La migration `0001_init` reste à appliquer (`prisma migrate deploy`) dès qu'une base Postgres est disponible.
+- Correction faite en passant : `toMinor()` utilisait un arrondi flottant (`Math.round(x*factor*1e6)/1e6`) qui pouvait renvoyer un non-entier ; réécrit en calcul décimal exact sur chaînes (BigInt), couvert par money.spec.ts.
