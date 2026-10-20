@@ -20,6 +20,7 @@ import { RolesGuard } from './common/guards/roles.guard';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { IdempotencyInterceptor } from './common/interceptors/idempotency.interceptor';
 import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
 
 /**
  * Racine de l'application.
@@ -55,6 +56,7 @@ import { AuthModule } from './modules/auth/auth.module';
     PushModule,
     EmailModule,
     AuthModule,
+    UsersModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
