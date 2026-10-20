@@ -289,6 +289,8 @@ enum DevicePlatform {
   HMS
   APNS
   WEB
+  IOS
+  ANDROID
 }
 
 enum EngagementType {
@@ -577,6 +579,7 @@ model UserSettings {
 model Follow {
   followerId String
   followingId String
+  createdAt DateTime @default(now())
   status FollowStatus @default(ACCEPTED)
   follower User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
   following User @relation("following", fields: [followingId], references: [id], onDelete: Cascade)
@@ -729,6 +732,7 @@ model CommentLike {
 model VideoLike {
   videoId String
   userId String
+  createdAt DateTime @default(now())
   video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@id([videoId, userId])
@@ -1563,7 +1567,6 @@ model DeliveryEvent {
 }
 
 model DeliveryOffer {
-  id String @id @default(uuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   deliveryId String
@@ -1572,7 +1575,7 @@ model DeliveryOffer {
   expiresAt DateTime
   delivery Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
   courierRef Courier @relation("courierOffers", fields: [courierId], references: [id])
-  @@index([deliveryId])
+  @@id([deliveryId, courierId])
   @@index([courierId, status])
 }
 
