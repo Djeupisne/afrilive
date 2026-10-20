@@ -113,3 +113,30 @@ const CouponType = { PERCENT: 'PERCENT', FIXED: 'FIXED' };
 const OrderSource = { FEED: 'FEED', LIVE: 'LIVE', SHOP: 'SHOP' };
 module.exports.CouponType = CouponType;
 module.exports.OrderSource = OrderSource;
+
+// --- Enums ajoutés pour les specs wallet (synchrones avec schema.prisma)
+const WalletTransactionType = {
+  TOPUP: 'TOPUP',
+  WITHDRAW: 'WITHDRAW',
+  TRANSFER_IN: 'TRANSFER_IN',
+  TRANSFER_OUT: 'TRANSFER_OUT',
+  PAYMENT: 'PAYMENT',
+  REFUND: 'REFUND',
+  PAYOUT: 'PAYOUT',
+  TIP: 'TIP',
+  SALE: 'SALE',
+};
+const LedgerDirection = { DEBIT: 'DEBIT', CREDIT: 'CREDIT' };
+const LedgerAccountType = {
+  USER_WALLET: 'USER_WALLET',
+  ESCROW: 'ESCROW',
+  PLATFORM_REVENUE: 'PLATFORM_REVENUE',
+  PROVIDER_CLEARING: 'PROVIDER_CLEARING',
+  PAYOUT_CLEARING: 'PAYOUT_CLEARING',
+};
+// NB : PaymentPurpose ci-dessus utilisait des clés historiques ; on aligne
+// sur le schéma Prisma réel (ORDER / WALLET_TOPUP / TIP / PROMOTION).
+module.exports.PaymentPurpose = { ORDER: 'ORDER', WALLET_TOPUP: 'WALLET_TOPUP', TIP: 'TIP', PROMOTION: 'PROMOTION' };
+module.exports.WalletTransactionType = WalletTransactionType;
+module.exports.LedgerDirection = LedgerDirection;
+module.exports.LedgerAccountType = LedgerAccountType;

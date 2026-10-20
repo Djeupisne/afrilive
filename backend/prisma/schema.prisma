@@ -1304,6 +1304,8 @@ model Wallet {
   currency String
   balanceMinor Int @default(0)
   dailyLimitMinor Int @default(50000000)
+  /// Gel administratif : toutes les écritures (credit/debit/withdraw/convert/transfer) sont refusées (WALLET_FROZEN).
+  frozen Boolean @default(false)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions WalletTransaction[]
   ledgerAccount LedgerAccount?

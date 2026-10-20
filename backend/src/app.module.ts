@@ -25,6 +25,7 @@ import { ShopsModule } from './modules/shops/shops.module';
 import { ProductsModule } from './modules/products/products.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { WalletModule } from './modules/wallet/wallet.module';
 
 /**
  * Racine de l'application.
@@ -65,6 +66,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
     ProductsModule,
     OrdersModule,
     PaymentsModule,
+    WalletModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
