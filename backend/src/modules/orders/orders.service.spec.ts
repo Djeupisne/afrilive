@@ -53,7 +53,11 @@ const checkoutDto = (extra: Record<string, unknown> = {}) =>
   ({ shippingAddress: { fullName: 'A', phone: '+22507000000', city: 'Abidjan' }, countryCode: 'CI', ...extra }) as never;
 
 /** Câble les mocks pour un checkout nominal (boutique ACTIVE, stock OK). */
-function wireCheckout({ prisma, tx }: ReturnType<typeof makeMocks>, createdOrder = { id: 'o-1' }) {
+function wireCheckout(
+  mocks: Pick<ReturnType<typeof makeMocks>, 'prisma' | 'tx'>,
+  createdOrder = { id: 'o-1' },
+) {
+  const { prisma, tx } = mocks;
   prisma.cartItem.findFirst.mockResolvedValue({ variant: { product: { shopId: 's-1', currency: 'XOF' } } });
   prisma.shop.findUnique.mockResolvedValue({ id: 's-1', status: 'ACTIVE', countryCode: 'CI', ownerId: 'u-seller' });
   prisma.order.findUnique.mockResolvedValue({ ...createdOrder, buyerId: 'u-buyer', shopId: 's-1', status: OrderStatus.PENDING, items: [], history: [] });
