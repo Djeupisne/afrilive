@@ -20,8 +20,7 @@ import type { CursorPaginationQueryDto } from '../../common/dto/pagination.dto';
 import { OrdersService } from '../orders/orders.service';
 import type { ConfirmPaymentDto, InitiatePaymentDto, RefundPaymentDto } from './dto/payment.dto';
 
-/** Score fraude au-delà duquel la transaction est bloquée / révisée. */
-const FRAUD_BLOCK_SCORE = 0.9;
+/** Score fraude enregistré lorsqu'une transaction passe en révision manuelle. */
 const FRAUD_REVIEW_SCORE = 0.6;
 
 interface Actor {
