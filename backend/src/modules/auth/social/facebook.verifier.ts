@@ -1,7 +1,7 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { AuthProvider } from '@prisma/client';
 import axios from 'axios';
-import { createHmac, timingSafeEqual } from 'crypto';
+import { createHmac } from 'crypto';
 import { ERROR_CODES } from '../../../common/errors/error-codes';
 import { AppException } from '../../../common/errors/app.exception';
 import type { SocialVerifier, VerifiedSocialProfile } from './social-verifier.interface';

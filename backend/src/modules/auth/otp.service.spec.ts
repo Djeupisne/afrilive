@@ -90,7 +90,7 @@ describe('OtpService', () => {
     it('bloque la deuxième demande < 60 s (setNx refusé) → RATE_LIMITED', async () => {
       const { svc, store } = makeService({ lockAllowed: false });
       await expect(svc.issue(phone, OtpChannel.SMS)).rejects.toMatchObject({
-        errorCode: ERROR_CODES.RATE_LIMITED,
+        code: ERROR_CODES.RATE_LIMITED,
       });
       expect(store).toHaveLength(0);
     });
@@ -133,7 +133,7 @@ describe('OtpService', () => {
     it('OTP_INVALID si aucun challenge en attente', async () => {
       const { svc } = makeService();
       await expect(svc.verify(phone, OtpChannel.SMS, '123456')).rejects.toMatchObject({
-        errorCode: ERROR_CODES.OTP_INVALID,
+        code: ERROR_CODES.OTP_INVALID,
       });
     });
 
@@ -142,7 +142,7 @@ describe('OtpService', () => {
       await svc.issue(phone, OtpChannel.SMS);
       store[0].expiresAt = new Date(Date.now() - 1000);
       await expect(svc.verify(phone, OtpChannel.SMS, '123456')).rejects.toMatchObject({
-        errorCode: ERROR_CODES.OTP_EXPIRED,
+        code: ERROR_CODES.OTP_EXPIRED,
       });
     });
 
@@ -151,12 +151,12 @@ describe('OtpService', () => {
       await svc.issue(phone, OtpChannel.SMS);
       for (let i = 0; i < 3; i++) {
         await expect(svc.verify(phone, OtpChannel.SMS, '000000')).rejects.toMatchObject({
-          errorCode: ERROR_CODES.OTP_INVALID,
+          code: ERROR_CODES.OTP_INVALID,
         });
       }
       expect(store[0].attempts).toBe(3);
       await expect(svc.verify(phone, OtpChannel.SMS, '000000')).rejects.toMatchObject({
-        errorCode: ERROR_CODES.OTP_TOO_MANY_ATTEMPTS,
+        code: ERROR_CODES.OTP_TOO_MANY_ATTEMPTS,
       });
     });
 
@@ -167,7 +167,7 @@ describe('OtpService', () => {
       store[0].codeHash = await argon2.hash(code, { type: argon2.argon2id });
       await svc.verify(phone, OtpChannel.SMS, code);
       await expect(svc.verify(phone, OtpChannel.SMS, code)).rejects.toMatchObject({
-        errorCode: ERROR_CODES.OTP_INVALID,
+        code: ERROR_CODES.OTP_INVALID,
       });
     });
   });
