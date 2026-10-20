@@ -8,6 +8,31 @@ export interface Jwk {
   [key: string]: unknown;
 }
 
+/** Conversion d'une JWK RSA (n/e base64url) en clé publique PEM via ASN.1 DER. */
+function jwkRsaToPem(jwk: Jwk): string {
+  if (jwk.kty !== 'RSA' || typeof jwk.n !== 'string' || typeof jwk.e !== 'string') {
+    throw new Error('JWK non-RSA ignorée.');
+  }
+  const b64 = (s: string): Buffer => Buffer.from(s, 'base64url');
+  const derLen = (content: Buffer): Buffer => {
+    if (content.length < 0x80) return Buffer.from([content.length]);
+    const hex = content.length.toString(16);
+    const bytes = Buffer.from(hex.length % 2 === 0 ? hex : `0${hex}`, 'hex');
+    return Buffer.from([0x80 + bytes.length, ...bytes]);
+  };
+  const seq = (content: Buffer): Buffer => Buffer.concat([Buffer.from([0x30]), derLen(content), content]);
+  const toDerInt = (buf: Buffer): Buffer => {
+    const stripped = buf[0] >= 0x80 ? Buffer.concat([Buffer.from([0x00]), buf]) : buf;
+    return Buffer.concat([Buffer.from([0x02]), derLen(stripped), stripped]);
+  };
+  const rsaSeq = seq(Buffer.concat([toDerInt(b64(jwk.n)), toDerInt(b64(jwk.e))]));
+  const algorithmId = Buffer.from('300d06092a864886f70d0101010500', 'hex');
+  const bitStringContent = Buffer.concat([Buffer.from([0x00]), rsaSeq]);
+  const bitString = Buffer.concat([Buffer.from([0x03]), derLen(bitStringContent), bitStringContent]);
+  const outer = seq(Buffer.concat([algorithmId, bitString]));
+  return `-----BEGIN PUBLIC KEY-----\n${outer.toString('base64').match(/.{1,64}/g)!.join('\n')}\n-----END PUBLIC KEY-----`;
+}
+
 /** Décode un JWT sans vérifier (parties header/payload uniquement). */
 export function decodeJwtParts(token: string): { header: Record<string, unknown>; payload: Record<string, unknown>; signingInput: string; signature: Buffer } {
   const parts = token.split('.');
@@ -30,7 +55,7 @@ export function verifyRs256(token: string, jwks: Jwk[], expectedKid?: string): v
   let lastErr: Error | null = null;
   for (const jwk of candidates) {
     try {
-      const key = createPublicKey({ key: jwk as object, format: 'jwk' });
+      const key = createPublicKey(jwkRsaToPem(jwk));
       const ok = cryptoVerify('RSA-SHA256', Buffer.from(signingInput), key, signature);
       if (ok) return;
     } catch (err) {
